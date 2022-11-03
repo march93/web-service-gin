@@ -8,10 +8,11 @@ import (
 )
 
 type Document struct {
-	Oid       string `gorm:"primary_key;"`
-	Content   string `gorm:"not null;"`
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	Oid            string `gorm:"primary_key;"`
+	Content        string `gorm:"not null;"`
+	RepositoryName string
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
 }
 
 // BeforeCreate will set a UUID rather than numeric ID.
