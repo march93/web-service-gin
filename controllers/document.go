@@ -29,7 +29,7 @@ func (d DocumentController) GetDocument(c *gin.Context) {
 
 	err := models.GetSpecificDocument(d.DB, &repository, name, oid)
 	if err != nil {
-		// Throw 404 if document not found
+		// Throw 404 if repository not found
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.AbortWithStatus(http.StatusNotFound)
 			return
@@ -132,9 +132,32 @@ func (d DocumentController) UploadDocument(c *gin.Context) {
 
 // Delete a document
 func (d DocumentController) DeleteDocument(c *gin.Context) {
+	name := c.Param("repository")
 	oid := c.Param("oid")
+	var repository models.Repository
 
-	err := models.DeleteDocument(d.DB, oid)
+	err := models.GetSpecificDocument(d.DB, &repository, name, oid)
+	if err != nil {
+		// Throw 404 if repository not found
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.AbortWithStatus(http.StatusNotFound)
+			return
+		}
+
+		// Generic 500 server error
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"Error": err})
+		return
+	}
+
+	documents := repository.Documents
+	if len(documents) == 0 {
+		// No document found within this repo
+		c.AbortWithStatus(http.StatusNotFound)
+		return
+	}
+
+	// Delete the document
+	err = models.DeleteDocument(d.DB, documents[0].Oid)
 	if err != nil {
 		// Generic 500 server error
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"Error": err})
