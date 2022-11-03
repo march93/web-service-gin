@@ -140,7 +140,7 @@ func (d DocumentController) DeleteDocument(c *gin.Context) {
 	if err != nil {
 		// Throw 404 if repository not found
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			c.AbortWithStatus(http.StatusNotFound)
+			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"Error": "Repository not found"})
 			return
 		}
 
@@ -152,7 +152,7 @@ func (d DocumentController) DeleteDocument(c *gin.Context) {
 	documents := repository.Documents
 	if len(documents) == 0 {
 		// No document found within this repo
-		c.AbortWithStatus(http.StatusNotFound)
+		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"Error": "Document not found"})
 		return
 	}
 
