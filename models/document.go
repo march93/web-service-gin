@@ -12,7 +12,6 @@ type Document struct {
 	Content   string `gorm:"not null;"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
-	DeletedAt gorm.DeletedAt `gorm:"index"`
 }
 
 // BeforeCreate will set a UUID rather than numeric ID.
@@ -67,8 +66,8 @@ func UpdateDocument(db *gorm.DB, document *Document) (err error) {
 }
 
 // Delete a document
-func DeleteDocument(db *gorm.DB, document *Document, oid string) (err error) {
-	err = db.Where("oid = ?", oid).Delete(document).Error
+func DeleteDocument(db *gorm.DB, oid string) (err error) {
+	err = db.Where("oid = ?", oid).Delete(&Document{}).Error
 
 	if err != nil {
 		return err

@@ -73,3 +73,17 @@ func (d DocumentController) UploadDocument(c *gin.Context) {
 	// Document not updated, no data returned
 	c.Status(http.StatusNoContent)
 }
+
+// Delete a document
+func (d DocumentController) DeleteDocument(c *gin.Context) {
+	oid := c.Param("oid")
+
+	err := models.DeleteDocument(d.DB, oid)
+	if err != nil {
+		// Generic 500 server error
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"Error": err})
+		return
+	}
+
+	c.Status(http.StatusOK)
+}
