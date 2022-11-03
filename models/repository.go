@@ -7,7 +7,7 @@ import (
 )
 
 type Repository struct {
-	Name      string     `gorm:"primary_key;"`
+	Name      string     `gorm:"primary_key;unique"`
 	Documents []Document `gorm:"foreignKey:RepositoryName;"`
 	CreatedAt time.Time
 	UpdatedAt time.Time

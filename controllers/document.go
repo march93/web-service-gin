@@ -48,7 +48,6 @@ func (d DocumentController) GetDocument(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, documents[0])
-
 }
 
 // Upload a document
@@ -56,49 +55,48 @@ func (d DocumentController) UploadDocument(c *gin.Context) {
 	name := c.Param("repository")
 	var repository models.Repository
 	var document models.Document
-	c.BindJSON(&document)
 
-	err := models.GetSpecificDocumentByContent(d.DB, &repository, name, &document)
+	// Bad input types provided
+	err := c.BindJSON(&document)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"Error": err})
+		return
+	}
+
+	tx := d.DB.Begin()
+	err = models.GetSpecificDocumentByContent(tx, &repository, name, &document)
 	if err != nil {
 		// Repository does not exist, so we will create one
 		// and attach our document to it
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			// First set the repository name to be used as primary key
 			repository.Name = name
-			err = models.CreateRepository(d.DB, &repository)
+			err = models.CreateRepository(tx, &repository)
 			if err != nil {
-				if errors.Is(err, gorm.ErrInvalidData) {
-					// Passed in invalid data - return 400 bad request
-					c.AbortWithStatus(http.StatusBadRequest)
-					return
-				}
-
 				// Generic 500 server error
+				tx.Rollback()
 				c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"Error": err})
 				return
 			}
 
 			// Create our document and set the repository name
 			document.RepositoryName = name
-			err = models.CreateDocument(d.DB, &document)
-			if err != nil {
-				if errors.Is(err, gorm.ErrInvalidData) {
-					// Passed in invalid data - return 400 bad request
-					c.AbortWithStatus(http.StatusBadRequest)
-					return
-				}
-
+			err = models.CreateDocument(tx, &document)
+			if err == nil {
 				// Generic 500 server error
+				tx.Rollback()
 				c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"Error": err})
 				return
 			}
 
 			// Return oid and size object as part of 200 response
+			tx.Commit()
 			c.JSON(http.StatusCreated, gin.H{"oid": document.Oid, "size": len(document.Content)})
 			return
 		}
 
 		// Generic 500 server error
+		tx.Rollback()
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"Error": err})
 		return
 	}
@@ -110,12 +108,6 @@ func (d DocumentController) UploadDocument(c *gin.Context) {
 		document.RepositoryName = name
 		err = models.CreateDocument(d.DB, &document)
 		if err != nil {
-			if errors.Is(err, gorm.ErrInvalidData) {
-				// Passed in invalid data - return 400 bad request
-				c.AbortWithStatus(http.StatusBadRequest)
-				return
-			}
-
 			// Generic 500 server error
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"Error": err})
 			return

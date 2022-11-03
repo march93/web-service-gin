@@ -9,7 +9,7 @@ import (
 
 type Document struct {
 	Oid            string `gorm:"primary_key;"`
-	Content        string `gorm:"not null;"`
+	Content        string `binding:"required,min=1" gorm:"not null;"`
 	RepositoryName string
 	CreatedAt      time.Time
 	UpdatedAt      time.Time
