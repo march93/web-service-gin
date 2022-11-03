@@ -1,17 +1,41 @@
 package models
 
-import "gorm.io/gorm"
+import (
+	"time"
+
+	"github.com/google/uuid"
+	"gorm.io/gorm"
+)
 
 type Document struct {
-	gorm.Model
-	OID     string `gorm:"primarykey"`
-	Content string
-	Size    int64
+	Oid       string `gorm:"primary_key;"`
+	Content   string `gorm:"not null;"`
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	DeletedAt gorm.DeletedAt `gorm:"index"`
+}
+
+// BeforeCreate will set a UUID rather than numeric ID.
+func (document *Document) BeforeCreate(tx *gorm.DB) (err error) {
+	uuid := uuid.NewString()
+	tx.Statement.SetColumn("Oid", uuid)
+	return nil
 }
 
 // Fetch a document
 func GetDocument(db *gorm.DB, document *Document, oid string) (err error) {
 	err = db.Where("oid = ?", oid).First(document).Error
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Fetch a document by content
+func GetDocumentByContent(db *gorm.DB, document *Document, newDocument *Document) (err error) {
+	err = db.Where("content = ?", newDocument.Content).First(document).Error
 
 	if err != nil {
 		return err

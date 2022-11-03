@@ -16,7 +16,7 @@ const DB_PORT = "3306"
 var Db *gorm.DB
 
 func connectDB() *gorm.DB {
-	dbString := DB_USERNAME + ":" + DB_PASSWORD + "@tcp" + "(" + DB_HOST + ":" + DB_PORT + ")/" + DB_NAME
+	dbString := DB_USERNAME + ":" + DB_PASSWORD + "@tcp" + "(" + DB_HOST + ":" + DB_PORT + ")/" + DB_NAME + "?" + "parseTime=true&loc=Local"
 	fmt.Println("dbString: ", dbString)
 
 	db, err := gorm.Open(mysql.Open(dbString), &gorm.Config{})
