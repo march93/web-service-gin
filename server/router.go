@@ -14,9 +14,9 @@ func NewRouter() *gin.Engine {
 	document := controllers.NewDocumentController()
 
 	// Set up API paths
-	router.GET("/data/document/:oid", document.GetDocument)
-	router.PUT("/data/document", document.UploadDocument)
-	router.DELETE("/data/document/:oid", document.DeleteDocument)
+	router.GET("/data/:repository/:oid", document.GetDocument)
+	router.PUT("/data/:repository", document.UploadDocument)
+	router.DELETE("/data/:repository/:oid", document.DeleteDocument)
 
 	return router
 }
