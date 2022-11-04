@@ -109,8 +109,3 @@ func insertTestDocument(db *gorm.DB) (models.Document, error) {
 
 	return document, nil
 }
-
-func closeDB(db *gorm.DB) {
-	dbInstance, _ := db.DB()
-	_ = dbInstance.Close()
-}
