@@ -16,59 +16,26 @@ type Document struct {
 }
 
 // BeforeCreate will set a UUID rather than numeric ID.
-func (document *Document) BeforeCreate(tx *gorm.DB) (err error) {
+func (document *Document) BeforeCreate(tx *gorm.DB) error {
 	uuid := uuid.NewString()
 	tx.Statement.SetColumn("Oid", uuid)
 	return nil
 }
 
-// Fetch a document
-func GetDocument(db *gorm.DB, document *Document, oid string) (err error) {
-	err = db.Where("oid = ?", oid).First(document).Error
+// Create a document
+func CreateDocument(db *gorm.DB, document *Document) (Document, error) {
+	err := db.Create(&document).Error
 
 	if err != nil {
-		return err
+		return *document, err
 	}
 
-	return nil
-}
-
-// Fetch a document by content
-func GetDocumentByContent(db *gorm.DB, document *Document, newDocument *Document) (err error) {
-	err = db.Where("content = ?", newDocument.Content).First(document).Error
-
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// Upload a document
-func CreateDocument(db *gorm.DB, document *Document) (err error) {
-	err = db.Create(document).Error
-
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// Update a document
-func UpdateDocument(db *gorm.DB, document *Document) (err error) {
-	err = db.Save(document).Error
-
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return *document, nil
 }
 
 // Delete a document
-func DeleteDocument(db *gorm.DB, oid string) (err error) {
-	err = db.Where("oid = ?", oid).Delete(&Document{}).Error
+func DeleteDocument(db *gorm.DB, oid string) error {
+	err := db.Where("oid = ?", oid).Delete(&Document{}).Error
 
 	if err != nil {
 		return err
