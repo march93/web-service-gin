@@ -2,6 +2,7 @@ package database
 
 import (
 	"fmt"
+	"web-service-gin/models"
 
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -22,13 +23,24 @@ func connectDB() *gorm.DB {
 	db, err := gorm.Open(mysql.Open(dbString), &gorm.Config{})
 
 	if err != nil {
-		fmt.Println("Error connecting to database : error=%v", err)
+		fmt.Printf("Error connecting to database : error=%v", err)
 		return nil
 	}
 
+	db.AutoMigrate(&models.Document{})
+	db.AutoMigrate(&models.Repository{})
 	return db
 }
 
 func InitDB() {
 	Db = connectDB()
+}
+
+func GetDB() *gorm.DB {
+	return Db
+}
+
+func ClearTable() {
+	Db.Exec("DELETE FROM repositories;")
+	Db.Exec("DELETE FROM documents;")
 }

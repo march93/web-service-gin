@@ -2,16 +2,17 @@ package server
 
 import (
 	"web-service-gin/controllers"
+	"web-service-gin/database"
 
 	"github.com/gin-gonic/gin"
 )
 
-func NewRouter() *gin.Engine {
+func SetupRouter() *gin.Engine {
 	// Initialize default Engine instance
 	router := gin.Default()
 
 	// Initialize controller instances
-	document := controllers.NewDocumentController()
+	document := &controllers.DocumentController{DB: database.GetDB()}
 
 	// Set up API paths
 	router.GET("/data/:repository/:oid", document.GetDocument)

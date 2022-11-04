@@ -10,6 +10,6 @@ func main() {
 	database.InitDB()
 
 	// Setup routers
-	router := server.NewRouter()
+	router := server.SetupRouter()
 	router.Run("localhost:8080")
 }
