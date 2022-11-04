@@ -3,7 +3,6 @@ package controllers
 import (
 	"errors"
 	"net/http"
-	"web-service-gin/database"
 	"web-service-gin/models"
 
 	"github.com/gin-gonic/gin"
@@ -14,24 +13,16 @@ type DocumentController struct {
 	DB *gorm.DB
 }
 
-func NewDocumentController() *DocumentController {
-	db := database.Db
-	db.AutoMigrate(&models.Document{})
-	db.AutoMigrate(&models.Repository{})
-	return &DocumentController{DB: db}
-}
-
 // Get document by oid
 func (d DocumentController) GetDocument(c *gin.Context) {
 	name := c.Param("repository")
 	oid := c.Param("oid")
-	var repository models.Repository
 
-	err := models.GetSpecificDocument(d.DB, &repository, name, oid)
+	repository, err := models.GetSpecificDocument(d.DB, name, oid)
 	if err != nil {
 		// Throw 404 if repository not found
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			c.AbortWithStatus(http.StatusNotFound)
+			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"Error": "Repository not found"})
 			return
 		}
 
@@ -43,7 +34,7 @@ func (d DocumentController) GetDocument(c *gin.Context) {
 	documents := repository.Documents
 	if len(documents) == 0 {
 		// No document found within this repo
-		c.AbortWithStatus(http.StatusNotFound)
+		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"Error": "Document not found"})
 		return
 	}
 
@@ -64,14 +55,14 @@ func (d DocumentController) UploadDocument(c *gin.Context) {
 	}
 
 	tx := d.DB.Begin()
-	err = models.GetSpecificDocumentByContent(tx, &repository, name, &document)
+	repository, err = models.GetSpecificDocumentByContent(tx, name, &document)
 	if err != nil {
 		// Repository does not exist, so we will create one
 		// and attach our document to it
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			// First set the repository name to be used as primary key
 			repository.Name = name
-			err = models.CreateRepository(tx, &repository)
+			repository, err = models.CreateRepository(tx, &repository)
 			if err != nil {
 				// Generic 500 server error
 				tx.Rollback()
@@ -81,8 +72,8 @@ func (d DocumentController) UploadDocument(c *gin.Context) {
 
 			// Create our document and set the repository name
 			document.RepositoryName = name
-			err = models.CreateDocument(tx, &document)
-			if err == nil {
+			document, err = models.CreateDocument(tx, &document)
+			if err != nil {
 				// Generic 500 server error
 				tx.Rollback()
 				c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"Error": err})
@@ -106,7 +97,7 @@ func (d DocumentController) UploadDocument(c *gin.Context) {
 		// Document with the same content does not exist, so we can create the document
 		// Create our document and set the repository name
 		document.RepositoryName = name
-		err = models.CreateDocument(d.DB, &document)
+		document, err = models.CreateDocument(d.DB, &document)
 		if err != nil {
 			// Generic 500 server error
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"Error": err})
@@ -128,7 +119,7 @@ func (d DocumentController) DeleteDocument(c *gin.Context) {
 	oid := c.Param("oid")
 	var repository models.Repository
 
-	err := models.GetSpecificDocument(d.DB, &repository, name, oid)
+	repository, err := models.GetSpecificDocument(d.DB, name, oid)
 	if err != nil {
 		// Throw 404 if repository not found
 		if errors.Is(err, gorm.ErrRecordNotFound) {
