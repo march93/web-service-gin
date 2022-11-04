@@ -8,22 +8,16 @@ import (
 	"testing"
 
 	"web-service-gin/controllers"
-	"web-service-gin/database"
 	"web-service-gin/models"
 
 	"github.com/gin-gonic/gin"
-	"github.com/stretchr/testify/assert"
 	"gorm.io/gorm"
 )
 
-func Test_GetDocument_NotFound(t *testing.T) {
-	database.InitDB()
-	db := database.GetDB()
+func (suite *TestSuiteEnv) Test_GetDocument_NotFound(t *testing.T) {
+	req, w := setGetDocumentRouter(suite.db, "/data/repo/123")
 
-	req, w := setGetDocumentRouter(db, "/data/repo/123")
-	defer closeDB(db)
-
-	a := assert.New(t)
+	a := suite.Assert()
 	a.Equal(http.MethodGet, req.Method, "HTTP request method error")
 	a.Equal(http.StatusNotFound, w.Code, "HTTP request status code error")
 
@@ -32,28 +26,24 @@ func Test_GetDocument_NotFound(t *testing.T) {
 		a.Error(err)
 	}
 
-	actual := models.Document{}
+	var actual models.Document
 	if err := json.Unmarshal(body, &actual); err != nil {
 		a.Error(err)
 	}
 
-	expected := models.Document{}
+	var expected models.Document
 	a.Equal(expected, actual)
-	database.ClearTable()
 }
 
-func Test_GetDocument_Success(t *testing.T) {
-	a := assert.New(t)
-	database.InitDB()
-	db := database.GetDB()
+func (suite *TestSuiteEnv) Test_GetDocument_Success(t *testing.T) {
+	a := suite.Assert()
 
-	document, err := insertTestDocument(db)
+	document, err := insertTestDocument(suite.db)
 	if err != nil {
 		a.Error(err)
 	}
 
-	req, w := setGetDocumentRouter(db, "/data/TestRepo/"+document.Oid)
-	defer closeDB(db)
+	req, w := setGetDocumentRouter(suite.db, "/data/TestRepo/"+document.Oid)
 
 	a.Equal(http.MethodGet, req.Method, "HTTP request method error")
 	a.Equal(http.StatusOK, w.Code, "HTTP request status code error")
@@ -63,14 +53,13 @@ func Test_GetDocument_Success(t *testing.T) {
 		a.Error(err)
 	}
 
-	actual := models.Document{}
+	var actual models.Document
 	if err := json.Unmarshal(body, &actual); err != nil {
 		a.Error(err)
 	}
 
 	expected := document
 	a.Equal(expected, actual)
-	database.ClearTable()
 }
 
 func setGetDocumentRouter(db *gorm.DB, url string) (*http.Request, *httptest.ResponseRecorder) {
@@ -108,9 +97,4 @@ func insertTestDocument(db *gorm.DB) (models.Document, error) {
 	}
 
 	return document, nil
-}
-
-func closeDB(db *gorm.DB) {
-	dbInstance, _ := db.DB()
-	_ = dbInstance.Close()
 }
